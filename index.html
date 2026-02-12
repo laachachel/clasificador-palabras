@@ -1,1 +1,103 @@
-<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Document</title>\n</head>\n<body>\n    <h1>Welcome to the Clasificador Palabras!</h1>\n    <p>This is a sample index.html file.</p>\n</body>\n</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clasificador de Palabras</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        input { padding: 10px; font-size: 18px; width: 70%; }
+        button { padding: 10px; font-size: 18px; cursor: pointer; }
+        .result-box { margin-top: 20px; padding: 20px; border: 2px solid #ddd; border-radius: 8px; }
+        .syllables { font-size: 24px; letter-spacing: 2px; margin-bottom: 10px; }
+        .tonic { color: red; font-weight: bold; text-decoration: underline; }
+        .tag { display: inline-block; padding: 5px 10px; color: white; border-radius: 4px; font-weight: bold; }
+        .aguda { background-color: #e67e22; }      /* Orange */
+        .llana { background-color: #27ae60; }      /* Green */
+        .esdrujula { background-color: #8e44ad; }  /* Purple */
+    </style>
+</head>
+<body>
+
+    <h1>Clasificador de Acentos</h1>
+    <p>Escribe una palabra para ver si es Aguda, Llana o Esdrújula.</p>
+    
+    <input type="text" id="wordInput" placeholder="Ej: teléfono" onkeydown="if(event.key==='Enter') classify()">
+    <button onclick="classify()">Analizar</button>
+
+    <div id="result" class="result-box" style="display:none;">
+        <div class="syllables" id="syllableDisplay"></div>
+        <h2 id="categoryDisplay"></h2>
+        <p id="explanation"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/silabajs@1.0.0/dist/index.min.js"></script>
+
+    <script>
+        function classify() {
+            const word = document.getElementById('wordInput').value.trim();
+            if (!word) return;
+
+            // 1. Use the library to analyze the word
+            // The library returns an object with syllables and the stress position
+            const analysis = silabaJS.getSilabas(word);
+            
+            // 2. Render Syllables (Highlighting the tonic one)
+            const syllableContainer = document.getElementById('syllableDisplay');
+            syllableContainer.innerHTML = '';
+            
+            analysis.silabas.forEach((syllableObj, index) => {
+                const span = document.createElement('span');
+                span.textContent = syllableObj.silaba;
+                
+                // Add a dash if it's not the last syllable
+                if (index < analysis.silabas.length - 1) {
+                    span.textContent += '-';
+                }
+
+                // Check if this is the tonic syllable
+                // Note: The library returns 'tonica' as a 1-based index, or we calculate position
+                if (index + 1 === analysis.tonica) { 
+                    span.className = 'tonic';
+                }
+                syllableContainer.appendChild(span);
+            });
+
+            // 3. Logic for Aguda/Llana/Esdrújula
+            // We calculate position from the END. 
+            // 0 = Last, 1 = Penultimate, 2 = Antepenultimate
+            const positionFromEnd = analysis.numeroSilaba - analysis.tonica;
+            
+            let category = '';
+            let cssClass = '';
+            let text = '';
+
+            if (positionFromEnd === 0) {
+                category = 'Aguda';
+                cssClass = 'aguda';
+                text = 'La fuerza de voz está en la última sílaba.';
+            } else if (positionFromEnd === 1) {
+                category = 'Llana (Grave)';
+                cssClass = 'llana';
+                text = 'La fuerza de voz está en la penúltima sílaba.';
+            } else if (positionFromEnd === 2) {
+                category = 'Esdrújula';
+                cssClass = 'esdrujula';
+                text = 'La fuerza de voz está en la antepenúltima sílaba.';
+            } else {
+                category = 'Sobreesdrújula';
+                cssClass = 'esdrujula';
+                text = 'La fuerza de voz está antes de la antepenúltima sílaba.';
+            }
+
+            // 4. Update UI
+            const catDisplay = document.getElementById('categoryDisplay');
+            catDisplay.textContent = category;
+            catDisplay.className = 'tag ' + cssClass;
+            
+            document.getElementById('explanation').textContent = text;
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
